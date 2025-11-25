@@ -5,4 +5,10 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 };
 
+module.exports = {
+  compiler: {
+    styledComponents: true,
+  },
+}
+
 export default nextConfig;
