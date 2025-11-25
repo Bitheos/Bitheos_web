@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useEffect, useRef } from 'react';
 import FuzzyText from './FuzzyText';
 import Noise from './Noise';
