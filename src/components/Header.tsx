@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image';
 import React, { useState, useEffect, useRef } from 'react';
 import FuzzyText from './FuzzyText';
 import Noise from './Noise';
@@ -75,7 +76,22 @@ const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
             
             {/* Logo/Handle - SIN CAMBIOS */}
             <div className="shrink-0">
-              <a href="/" className="flex items-center space-x-2">
+              <a href="/" className="flex items-center gap-1">
+                
+                {/* *** NUEVO: EL ICONO / LOGO ***
+                  - src: /logo.png (si está en la carpeta public)
+                  - width/height: Define el tamaño del icono
+                  - alt: Texto descriptivo
+                  - className: Para añadir estilos (ej. un margen derecho)
+                */}
+                <Image
+                  src="/logo.png" 
+                  alt="Icono del Portfolio"
+                  width={32} // Ajusta el tamaño según tu diseño
+                  height={32} // Ajusta el tamaño según tu diseño
+                  className="rounded-full" // Opcional: para darle forma circular
+                />
+                
                 <FuzzyText 
                   fontSize="1.5rem"
                   fontWeight={800}

@@ -55,7 +55,7 @@ export default function HomePage() {
             </div>
 
             {/* Contenido principal */}
-            <div className="relative z-20 max-w-4xl mx-auto py-20">
+            <div className="relative z-20 max-w-4xl mx-auto py-22 lg:py-0">
               <p className="text-xl sm:text-2xl text-white mb-4 font-medium uppercase tracking-widest drop-shadow-lg">
                   HELLO, I'M A DEVELOPER!
               </p>
