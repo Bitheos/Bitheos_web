@@ -10,6 +10,7 @@ const ScrollFloat = dynamic(() => import('@/components/ScrollFloat'), { ssr: fal
 const SpotlightCard = dynamic(() => import('@/components/SpotlightCard'), { ssr: false });
 const ClickSpark = dynamic(() => import('@/components/ClickSpark'), { ssr: false });
 const GlassSurface = dynamic(() => import('@/components/GlassSurface'), { ssr: false });
+const Particles = dynamic(() => import('@/components/Particles'), { ssr: false });
 
 // Iconos SVG de Lucide para las habilidades
 const IconCode = (props: React.SVGProps<SVGSVGElement>) => (<svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
@@ -103,7 +104,7 @@ export default function HomePage() {
           </section>
 
           {/* 3. SECCIÓN PROYECTOS */}
-          <section id="projects" className="min-h-screen bg-gray-800 p-8 pt-20 border-b border-gray-700">
+          <section id="projects" className="min-h-screen bg-gray-300 p-8 pt-20 border-b border-gray-700">
             <ScrollFloat 
               containerClassName="text-center mb-12"
               textClassName="text-4xl font-extrabold text-indigo-400"
@@ -115,39 +116,67 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* 4. SECCIÓN HABILIDADES CON SPOTLIGHT CARDS */}
-          <section id="skills" className="min-h-screen bg-gray-900 p-8 pt-20 border-b border-gray-800">
-            <ScrollFloat 
-              containerClassName="text-center mb-16"
-              textClassName="text-4xl font-extrabold text-white"
-            >
-              My Tech Stack
-            </ScrollFloat>
-            
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {skillsData.map((skill) => (
-                <SpotlightCard 
-                  key={skill.name}
-                  spotlightColor="rgba(139, 92, 246, 0.3)"
-                  className="transition-transform duration-300 hover:scale-[1.02]"
-                >
-                  <div className="relative z-10">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <skill.icon className="w-8 h-8 text-indigo-400 shrink-0" />
-                      <h3 className="text-2xl font-bold text-white tracking-wider">{skill.name}</h3>
-                    </div>
-                    <p className="text-gray-400 text-base leading-relaxed">
-                      {skill.description}
-                    </p>
-                  </div>
-                </SpotlightCard>
-              ))}
-            </div>
+          {/* 4. SECCIÓN HABILIDADES */}
+          {/* 4. SECCIÓN HABILIDADES (CORREGIDA) */}
+<section 
+  id="skills" 
+  className="relative min-h-screen p-8 pt-20 border-b border-gray-700" // Añadir relative
+>
+  
+  {/* El componente Particles debe estar en el fondo absoluto */}
+  <div className="absolute inset-0 z-10" > 
+    <Particles
+    particleColors={['#ffffff', '#ffffff']}
+    particleCount={200}
+    particleSpread={10}
+    speed={0.1}
+    particleBaseSize={50}
+    moveParticlesOnHover={false}
+    alphaParticles={false}
+    disableRotation={false}
+  />
+    
+    {/* **CAPA DE FONDO:** Una capa opcional con color y opacidad para que el texto sea legible
+        NOTA: Si no quieres un color sólido de fondo, puedes quitar el div o
+        usar una opacidad muy baja (ej: bg-gray-900/50).
+        Si el componente Particles ya maneja un fondo, podrías quitar esta capa. */}
+  </div>
+  
 
-          </section>
+  {/* El contenido de la sección debe estar por encima de las partículas (z-10 o superior) */}
+  <div className="relative z-10">
+    <ScrollFloat 
+      containerClassName="text-center mb-16"
+      textClassName="text-4xl font-extrabold text-white"
+    >
+      My Tech Stack
+    </ScrollFloat>
+    
+    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {skillsData.map((skill) => (
+        <SpotlightCard 
+          key={skill.name}
+          spotlightColor="rgba(13, 92, 246, 0.7)"
+          className="transition-transform duration-300 hover:scale-[1.02]"
+        >
+          {/* Ya tiene z-10 por la estructura de SpotlightCard */}
+          <div className="relative z-10"> 
+            <div className="flex items-center space-x-4 mb-4">
+              <skill.icon className="w-8 h-8 text-indigo-400 shrink-0" />
+              <h3 className="text-2xl font-bold text-white tracking-wider">{skill.name}</h3>
+            </div>
+            <p className="text-gray-400 text-base leading-relaxed">
+              {skill.description}
+            </p>
+          </div>
+        </SpotlightCard>
+      ))}
+    </div>
+  </div>
+</section>
 
           {/* 5. SECCIÓN CONTACTO */}
-          <section id="contact" className="min-h-screen bg-gray-800 p-8 pt-20">
+          <section id="contact" className="min-h-screen bg-gray-300 p-8 pt-20">
             <ScrollFloat 
               containerClassName="text-center mb-12"
               textClassName="text-4xl font-extrabold text-indigo-400"
