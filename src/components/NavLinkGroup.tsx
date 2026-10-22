@@ -1,129 +1,198 @@
 'use client'
 
-// NavLinkGroup.tsx
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-// Define la estructura para los enlaces
-interface NavLink {
+export interface NavLink {
   name: string;
   href: string;
 }
 
 interface NavLinkGroupProps {
   navLinks: NavLink[];
-  // Opcional: Define un enlace activo si quieres simular el estado de 'checked'
-  activeLink: string; 
+  activeLink: string;
 }
 
 const NavLinkGroup: React.FC<NavLinkGroupProps> = ({ navLinks, activeLink }) => {
+  const dockRef = useRef<HTMLDivElement>(null);
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+
+  const measure = useCallback(() => {
+    const dock = dockRef.current;
+    if (!dock) return;
+
+    const target = Array.from(dock.querySelectorAll<HTMLAnchorElement>('a[data-href]'))
+      .find((link) => link.getAttribute('data-href') === activeLink);
+
+    if (!target) {
+      setIndicator(null);
+      return;
+    }
+
+    const dockRect = dock.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    setIndicator({ left: targetRect.left - dockRect.left, width: targetRect.width });
+  }, [activeLink]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(measure);
+    return () => window.cancelAnimationFrame(frame);
+  }, [measure]);
+
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock) return;
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(dock);
+    window.addEventListener('resize', measure);
+    document.fonts?.ready.then(measure);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [measure]);
+
   return (
     <StyledWrapper>
-      <div className="customCheckBoxHolder">
-        {navLinks.map((link) => (
-          // Usamos <a> en lugar de <label> y <input>
-          // Aplicamos la clase 'active' si el href coincide con activeLink
-          <a 
-            key={link.name} 
-            href={link.href}
-            className={`customNavLink ${link.href === activeLink ? 'active' : ''}`}
-          >
-            <div className="customCheckBox">
-              <div className="inner">{link.name}</div>
-            </div>
-          </a>
-        ))}
+      <div className="dock" ref={dockRef}>
+        <span
+          className="indicator"
+          aria-hidden="true"
+          style={{
+            opacity: indicator ? 1 : 0,
+            transform: `translateX(${indicator?.left ?? 0}px)`,
+            width: indicator?.width ?? 0,
+          }}
+        />
+        {navLinks.map((link) => {
+          const isActive = link.href === activeLink;
+          return (
+            <a
+              key={link.name}
+              href={link.href}
+              data-href={link.href}
+              aria-current={isActive ? 'true' : undefined}
+              className={`navLink${isActive ? ' active' : ''}`}
+            >
+              {link.name}
+            </a>
+          );
+        })}
       </div>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
-  /* --- ESTILOS ADAPTADOS DE TU CÓDIGO --- */
-  
-  .customCheckBoxHolder {
-    margin: 5px;
-    display: flex;
-  }
-
-  /* La clase 'customNavLink' reemplaza a '.customCheckBoxWrapper' */
-  .customNavLink {
-    text-decoration: none; /* Quitamos el subrayado del enlace */
-    color: inherit;
-  }
-
-  .customCheckBox {
-    width: fit-content;
+  .dock {
     position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    user-select: none;
-    padding: 2px 25px;
-    background-color: rgba(0, 0, 0, 0.16);
-    border-radius: 0px;
-    color: rgba(255, 255, 255, 0.7);
-    transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
-    transition-duration: 300ms;
-    transition-property: color, background-color, box-shadow;
     display: flex;
-    height: 32px;
     align-items: center;
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 1px 0px inset, rgba(255, 255, 255, 0.17) 0px 1px 1px 0px;
-    outline: none;
-    justify-content: center;
-    min-width: 55px;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+      0 10px 30px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
   }
 
-  .customCheckBox:hover {
-    background-color: #2c2c2c;
-    color: white;
-    box-shadow: rgba(0, 0, 0, 0.23) 0px -4px 1px 0px inset, rgba(255, 255, 255, 0.17) 0px -1px 1px 0px, rgba(0, 0, 0, 0.17) 0px 2px 4px 1px;
-  }
-
-  .customCheckBox .inner {
-    font-size: 16px; /* Ajustado el tamaño para la navegación */
-    font-weight: 700;
+  .indicator {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    bottom: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.07));
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 0 0 1px rgba(99, 102, 241, 0.16),
+      0 8px 22px rgba(79, 70, 229, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     pointer-events: none;
-    transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
-    transition-duration: 300ms;
-    transition-property: transform;
-    transform: translateY(0px);
+    transition:
+      transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 260ms ease;
+    will-change: transform, width;
   }
 
-  .customCheckBox:hover .inner {
-    transform: translateY(-2px);
+  .indicator::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(130% 150% at 50% 130%, rgba(129, 140, 248, 0.5), rgba(129, 140, 248, 0) 70%);
   }
 
-  /* --- MANEJO DE BORDES REDONDEADOS --- */
-  /* Reemplazamos :first-of-type y :last-of-type en el padre <a> */
-  .customNavLink:first-of-type .customCheckBox {
-    border-bottom-left-radius: 5px;
-    border-top-left-radius: 5px;
-    border-right: 0px;
+  .navLink {
+    position: relative;
+    z-index: 1;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.62);
+    transition:
+      color 300ms cubic-bezier(0.25, 0.8, 0.25, 1),
+      transform 300ms cubic-bezier(0.25, 0.8, 0.25, 1),
+      text-shadow 300ms ease;
   }
 
-  .customNavLink:last-of-type .customCheckBox {
-    border-bottom-right-radius: 5px;
-    border-top-right-radius: 5px;
-    border-left: 0px;
+  .navLink::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+    opacity: 0;
+    transition: opacity 300ms cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
-  /* --- ESTADO ACTIVO (SIMULADO) --- */
-  /* La clase 'active' en <a> reemplaza a ':checked + .customCheckBoxWrapper' */
-  .customNavLink.active .customCheckBox {
-    background-color: #2d6737; /* Color verde/activo */
-    color: white;
-    box-shadow: rgba(0, 0, 0, 0.23) 0px -4px 1px 0px inset, rgba(255, 255, 255, 0.17) 0px -1px 1px 0px, rgba(0, 0, 0, 0.17) 0px 2px 4px 1px;
+  .navLink:hover {
+    color: rgba(255, 255, 255, 0.95);
   }
 
-  .customNavLink.active .customCheckBox .inner {
-    transform: translateY(-2px);
+  .navLink:hover::before {
+    opacity: 1;
   }
-  
-  /* Efecto hover sobre el estado activo */
-  .customNavLink.active .customCheckBox:hover {
-    background-color: #34723f; /* Tono de verde ligeramente diferente en hover */
-    box-shadow: rgba(0, 0, 0, 0.26) 0px -4px 1px 0px inset, rgba(255, 255, 255, 0.17) 0px -1px 1px 0px, rgba(0, 0, 0, 0.15) 0px 3px 6px 2px;
+
+  .navLink:active {
+    transform: translateY(1px);
+  }
+
+  .navLink.active {
+    color: #ffffff;
+    text-shadow: 0 0 18px rgba(129, 140, 248, 0.55);
+  }
+
+  .navLink.active::before {
+    opacity: 0;
+  }
+
+  .navLink:focus-visible {
+    outline: 2px solid rgba(165, 180, 252, 0.9);
+    outline-offset: 2px;
+    color: #ffffff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .indicator,
+    .navLink,
+    .navLink::before {
+      transition-duration: 1ms;
+    }
   }
 `;
 

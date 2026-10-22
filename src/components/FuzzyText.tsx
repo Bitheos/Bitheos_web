@@ -11,6 +11,8 @@ interface FuzzyTextProps {
   enableHover?: boolean;
   baseIntensity?: number;
   hoverIntensity?: number;
+  /** Estado de hover externo. Si se pasa, sustituye la detección interna. */
+  hovered?: boolean;
 }
 
 const FuzzyText: React.FC<FuzzyTextProps> = ({
@@ -21,9 +23,15 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
   color = '#fff',
   enableHover = true,
   baseIntensity = 0.18,
-  hoverIntensity = 0.5
+  hoverIntensity = 0.5,
+  hovered
 }) => {
   const canvasRef = useRef<HTMLCanvasElement & { cleanupFuzzyText?: () => void }>(null);
+  const hoveredRef = useRef(hovered);
+
+  useEffect(() => {
+    hoveredRef.current = hovered;
+  }, [hovered]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -99,11 +107,13 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
 
       let isHovering = false;
       const fuzzRange = 30;
+      const externallyControlled = hoveredRef.current !== undefined;
 
       const run = () => {
         if (isCancelled) return;
         ctx.clearRect(-fuzzRange, -fuzzRange, offscreenWidth + 2 * fuzzRange, tightHeight + 2 * fuzzRange);
-        const intensity = isHovering ? hoverIntensity : baseIntensity;
+        const isActive = hoveredRef.current ?? isHovering;
+        const intensity = isActive ? hoverIntensity : baseIntensity;
         for (let j = 0; j < tightHeight; j++) {
           const dx = Math.floor(intensity * (Math.random() - 0.5) * fuzzRange);
           ctx.drawImage(offscreen, 0, j, offscreenWidth, 1, dx, j, offscreenWidth, 1);
@@ -142,7 +152,7 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
         isHovering = false;
       };
 
-      if (enableHover) {
+      if (enableHover && !externallyControlled) {
         canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('mouseleave', handleMouseLeave);
         canvas.addEventListener('touchmove', handleTouchMove, {
@@ -153,7 +163,7 @@ const FuzzyText: React.FC<FuzzyTextProps> = ({
 
       const cleanup = () => {
         window.cancelAnimationFrame(animationFrameId);
-        if (enableHover) {
+        if (enableHover && !externallyControlled) {
           canvas.removeEventListener('mousemove', handleMouseMove);
           canvas.removeEventListener('mouseleave', handleMouseLeave);
           canvas.removeEventListener('touchmove', handleTouchMove);

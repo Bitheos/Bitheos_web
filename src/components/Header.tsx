@@ -1,8 +1,9 @@
 'use client'
 
-import Image from 'next/image';
-import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 import FuzzyText from './FuzzyText';
+import FuzzyImage from './FuzzyImage';
 import Noise from './Noise';
 import Magnet from './Magnet';
 import ClickSpark from './ClickSpark'; 
@@ -12,21 +13,24 @@ interface HeaderProps {
   githubHandle: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
-  const navLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'Projects', href: '#projects' },
-    { name: 'Skills', href: '#skills' },
-    { name: 'Contact', href: '#contact' },
-  ];
+const NAV_LINKS = [
+  { name: 'Home', href: '#home' },
+  { name: 'About', href: '#about' },
+  { name: 'Projects', href: '#projects' },
+  { name: 'Skills', href: '#skills' },
+  { name: 'Contact', href: '#contact' },
+];
 
+const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
   // 1. ESTADO: Para guardar el enlace activo (por defecto, '#home')
-  const [activeLink, setActiveLink] = useState(navLinks[0].href); 
+  const [activeLink, setActiveLink] = useState(NAV_LINKS[0].href); 
+  // Hover compartido del logo: icono y texto tiemblan a la vez.
+  const [logoHovered, setLogoHovered] = useState(false);
 
   // 2. EFECTO: Configurar el Intersection Observer al cargar
   useEffect(() => {
     // Busca todas las secciones que coincidan con los IDs de los hrefs
-    const sectionElements = navLinks
+    const sectionElements = NAV_LINKS
       .map(link => document.querySelector(link.href))
       .filter(Boolean) as Element[]; // Filtra nulls y asegura el tipo
 
@@ -67,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
     <header className={glassHeaderClasses}>
       <ClickSpark sparkColor="#FFFF" duration={400} sparkCount={8} sparkSize={10} sparkRadius={15}>
         <div> 
-          <div className="flex justify-between items-center h-16 gap-8 px-4 sm:px-6 lg:px-8"> 
+          <div className="flex justify-between items-center h-header gap-8 px-4 sm:px-6 lg:px-8"> 
               <Noise 
                   patternSize={250}
                   patternRefreshInterval={3}
@@ -76,20 +80,25 @@ const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
             
             {/* Logo/Handle - SIN CAMBIOS */}
             <div className="shrink-0">
-              <a href="/" className="flex items-center gap-1">
+              <Link
+                href="/"
+                className="flex items-center gap-1"
+                onMouseEnter={() => setLogoHovered(true)}
+                onMouseLeave={() => setLogoHovered(false)}
+                onFocus={() => setLogoHovered(true)}
+                onBlur={() => setLogoHovered(false)}
+              >
                 
-                {/* *** NUEVO: EL ICONO / LOGO ***
-                  - src: /logo.png (si está en la carpeta public)
-                  - width/height: Define el tamaño del icono
-                  - alt: Texto descriptivo
-                  - className: Para añadir estilos (ej. un margen derecho)
-                */}
-                <Image
-                  src="/logo.png" 
-                  alt="Icono del Portfolio"
-                  width={32} // Ajusta el tamaño según tu diseño
-                  height={32} // Ajusta el tamaño según tu diseño
-                  className="rounded-full" // Opcional: para darle forma circular
+                {/* Icono con el mismo temblor que el texto: canvas que
+                    desplaza cada fila de la imagen al pasar el cursor. */}
+                <FuzzyImage
+                  src="/logo.png"
+                  alt="Bitheos logo"
+                  size={32}
+                  className="rounded-full"
+                  baseIntensity={0.06}
+                  hoverIntensity={0.3}
+                  hovered={logoHovered}
                 />
                 
                 <FuzzyText 
@@ -99,10 +108,11 @@ const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
                   baseIntensity={0.05}
                   hoverIntensity={0.2}
                   enableHover={true}
+                  hovered={logoHovered}
                 >
                   {githubHandle}
                 </FuzzyText>
-              </a>
+              </Link>
             </div>
 
             {/* Navigation with Magnet Effect - Centro */}
@@ -111,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({ githubHandle }) => {
               {/* Se envuelve todo el grupo en UN solo Magnet */}
             
                 <NavLinkGroup 
-                  navLinks={navLinks} 
+                  navLinks={NAV_LINKS} 
                   activeLink={activeLink} 
                 />
               {/* Se eliminó el mapeo anterior: {navLinks.map((link) => (...))} */}

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState, useId } from 'react';
+import React, { useCallback, useEffect, useRef, useId, useSyncExternalStore } from 'react';
 
 export interface GlassSurfaceProps {
   children?: React.ReactNode;
@@ -43,22 +43,20 @@ export interface GlassSurfaceProps {
   style?: React.CSSProperties;
 }
 
-const useDarkMode = () => {
-  const [isDark, setIsDark] = useState(false);
+const DARK_MODE_QUERY = '(prefers-color-scheme: dark)';
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDark(mediaQuery.matches);
-
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
-
-  return isDark;
+const subscribeDarkMode = (onStoreChange: () => void) => {
+  const mediaQuery = window.matchMedia(DARK_MODE_QUERY);
+  mediaQuery.addEventListener('change', onStoreChange);
+  return () => mediaQuery.removeEventListener('change', onStoreChange);
 };
+
+const getDarkModeSnapshot = () => window.matchMedia(DARK_MODE_QUERY).matches;
+
+const getDarkModeServerSnapshot = () => false;
+
+const useDarkMode = () =>
+  useSyncExternalStore(subscribeDarkMode, getDarkModeSnapshot, getDarkModeServerSnapshot);
 
 const GlassSurface: React.FC<GlassSurfaceProps> = ({
   children,
@@ -96,7 +94,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
 
   const isDarkMode = useDarkMode();
 
-  const generateDisplacementMap = () => {
+  const generateDisplacementMap = useCallback(() => {
     const rect = containerRef.current?.getBoundingClientRect();
     const actualWidth = rect?.width || 400;
     const actualHeight = rect?.height || 200;
@@ -122,11 +120,11 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     `;
 
     return `data:image/svg+xml,${encodeURIComponent(svgContent)}`;
-  };
+  }, [borderRadius, borderWidth, blur, brightness, mixBlendMode, opacity, redGradId, blueGradId]);
 
-  const updateDisplacementMap = () => {
+  const updateDisplacementMap = useCallback(() => {
     feImageRef.current?.setAttribute('href', generateDisplacementMap());
-  };
+  }, [generateDisplacementMap]);
 
   useEffect(() => {
     updateDisplacementMap();
@@ -144,6 +142,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
 
     gaussianBlurRef.current?.setAttribute('stdDeviation', displace.toString());
   }, [
+    updateDisplacementMap,
     width,
     height,
     borderRadius,
@@ -157,8 +156,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     greenOffset,
     blueOffset,
     xChannel,
-    yChannel,
-    mixBlendMode
+    yChannel
   ]);
 
   useEffect(() => {
@@ -173,25 +171,11 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      setTimeout(updateDisplacementMap, 0);
-    });
-
-    resizeObserver.observe(containerRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
+  }, [updateDisplacementMap]);
 
   useEffect(() => {
     setTimeout(updateDisplacementMap, 0);
-  }, [width, height]);
+  }, [updateDisplacementMap, width, height]);
 
   const supportsSVGFilters = () => {
     const isWebkit = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);

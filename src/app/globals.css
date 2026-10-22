@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Portafolio oscuro: una sola paleta, independiente del esquema del sistema. */
+  --background: #05060b;
+  --foreground: #ededed;
+}
+
+@theme {
+  /* Altura del header fijo. Fuente única de verdad para h-header y para
+     el alto útil de cada sección (ver utilidad section-viewport). */
+  --spacing-header: 4rem;
 }
 
 @theme inline {
@@ -12,15 +19,223 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Cada sección ocupa el alto completo de la ventana actual, así la sección
+   en la que estás se ve completa al hacer scroll. El header es fixed y
+   translúcido: flota por encima del primer `--spacing-header` de la sección,
+   que es justo lo que se ve a través del cristal. Sin scroll-margin para que
+   el click deje la sección apoyada en el borde superior de la ventana. */
+@utility section-viewport {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* El header es fixed y translúcido: se superpone a los primeros
+   --spacing-header px de cada sección. Por eso el padding superior de todas
+   las secciones es header + aire, para que ningún título o texto quede
+   tapado por el cristal. Se declara antes que las compactaciones de abajo,
+   y esas solo tocan los lados y el fondo, nunca este padding. */
+.hero-section,
+.section-pad {
+  padding-top: calc(var(--spacing-header) + 1rem);
+}
+
+/* En ventanas bajas se aprieta la respiración vertical para que la sección
+   siga entrando entera, sin tocar el diseño de las ventanas normales. */
+@media (max-height: 840px) {
+  .hero-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-title {
+    font-size: 4rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-pad {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .section-heading-block {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-heading {
+    font-size: 2rem;
+  }
+
+  .section-grid {
+    gap: 1rem;
+  }
+}
+
+/* Muy bajas y estrechas: el py-22 del hero (176px de aire) empuja el
+   contenido fuera de la pantalla, así que solo ahí se reduce. */
+@media (max-height: 760px) {
+  .hero-content {
+    padding: 1rem 0;
+  }
+}
+
+/* Ventanas muy bajas: el hero baja otro escalón para no desbordarse. */
+@media (max-height: 660px) {
+  .hero-content {
+    padding: 0.5rem 0;
+  }
+
+  .hero-title {
+    font-size: 2.75rem;
+  }
+
+  .skill-card {
+    padding: 1.25rem;
+  }
+
+  .section-grid {
+    gap: 0.75rem;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Ritmo claro/oscuro entre secciones
+   Home y las alternas mantienen el negro de la marca; las intermedias suben a
+   un azul-grafito más claro. El contraste es suficiente para separar bloques
+   sin llegar a fondos blancos que rompan la temática ni la legibilidad.
+   --------------------------------------------------------------------------- */
+
+.section-theme-dark {
+  background: #05060b;
+}
+
+.section-theme-light {
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 0%, rgba(148, 163, 184, 0.16), transparent 62%),
+    linear-gradient(180deg, #1d2639 0%, #172032 48%, #111827 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Sobre el fondo claro el cristal y las píldoras necesitan un poco más de
+   cuerpo para no desaparecer. */
+.section-theme-light .glass-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.05)
+  );
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.section-theme-light .chip {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ---------------------------------------------------------------------------
+   Capas ambientales reutilizables
+   Recrean el lenguaje visual del home (color en movimiento + cristal) en el
+   resto de secciones sin pagar el coste de otro canvas WebGL por sección.
+   --------------------------------------------------------------------------- */
+
+/* Orbes de color difuminados que dan vida al fondo de cada sección. */
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+  pointer-events: none;
+  will-change: transform;
+  animation: aurora-drift 22s ease-in-out infinite;
+}
+
+.aurora-blob-alt {
+  animation: aurora-drift-alt 28s ease-in-out infinite;
+}
+
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.12);
+  }
+}
+
+@keyframes aurora-drift-alt {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.06);
+  }
+  50% {
+    transform: translate3d(-5%, 4%, 0) scale(0.96);
+  }
+}
+
+/* Superficie de cristal coherente con los botones del hero. */
+.glass-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.03)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Píldora para etiquetas de stack y enlaces secundarios. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition:
+    color 200ms ease,
+    background 200ms ease,
+    border-color 200ms ease;
+}
+
+.chip:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .aurora-blob-alt {
+    animation: none;
+  }
 }
